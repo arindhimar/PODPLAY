@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Search and Playback</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 80%;
+            margin: auto;
+            padding: 20px;
+        }
+
+        .search-box {
+            margin-bottom: 20px;
+        }
+
+        .search-box input {
+            padding: 10px;
+            width: 80%;
+            font-size: 16px;
+        }
+
+        .search-box button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .song-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .song-item {
+            width: 200px;
+            background-color: #fff;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .song-item img {
+            width: 100%;
+            border-radius: 8px;
+        }
+
+        .song-item h3 {
+            font-size: 16px;
+            margin: 10px 0;
+        }
+
+        .song-item p {
+            font-size: 14px;
+            color: #555;
+        }
+
+        audio {
+            width: 100%;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Music Search and Playback</h1>
+
+    <!-- Search Box -->
+    <div class="search-box">
+        <input type="text" id="query" placeholder="Search for a song...">
+        <button onclick="searchSongs()">Search</button>
+    </div>
+
+    <!-- Song List -->
+    <div class="song-list" id="song-list"></div>
+
+    <!-- Audio Player -->
+    <audio id="audio-player" controls></audio>
+</div>
+
+<script>
+    // Function to search for songs
+    function searchSongs() {
+        const query = document.getElementById('query').value;
+        if (!query) {
+            alert('Please enter a search query.');
+            return;
+        }
+
+        fetch(`/search?query=${query}`)
+            .then(response => response.json())
+            .then(data => {
+                const songList = document.getElementById('song-list');
+                songList.innerHTML = ''; // Clear previous search results
+
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+
+                data.forEach(song => {
+                    const songItem = document.createElement('div');
+                    songItem.classList.add('song-item');
+                    songItem.innerHTML = `
+                        <img src="${song.image}" alt="${song.title}">
+                        <h3>${song.title}</h3>
+                        <p>Artist: ${song.artist}</p>
+                        <button onclick="playSong('${song.audio_url}')">Play</button>
+                    `;
+                    songList.appendChild(songItem);
+                });
+            })
+            .catch(error => {
+                alert('Error fetching song data.');
+                console.error(error);
+            });
+    }
+
+    // Function to play the selected song
+    function playSong(audioUrl) {
+        const audioPlayer = document.getElementById('audio-player');
+        audioPlayer.src = audioUrl;
+        audioPlayer.play();
+    }
+</script>
+
+</body>
+</html>
