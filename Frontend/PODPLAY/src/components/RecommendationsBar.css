@@ -1,0 +1,44 @@
+:root {
+  --recommendations-background: #88c0d0;
+  --recommendations-bar-width: 300px;
+  --recommendations-dark-primary: #1b1f24;
+  --recommendations-light-primary: #f5f6fa;
+  --recommendations-accent-color: #88c0d0;
+  --navbar-text-color: #e5e9f0;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--recommendations-background);
+}
+
+#recommendations-bar {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  width: var(--recommendations-bar-width);
+  height: calc(100% - 20px);
+  border-radius: 16px;
+  background-color: var(--recommendations-dark-primary);
+  color: white;
+  z-index: 999;
+  box-shadow: -4px 0px 6px rgba(0, 0, 0, 0.1);
+}
+
+
+#recommendations-content {
+  overflow-y: auto;
+  max-height: 100%;
+  overflow-x: hidden;
+  height: 100%;
+}
+
+#recommendations-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+#recommendations-content::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  background-color: #aaa;
+}

@@ -13,7 +13,6 @@ const Sidebar = () => {
 
         {/* Logo and Title */}
         <a id="nav-title" href="#" rel="noopener noreferrer" className="relative z-10">
-          <Logo className="nav-logo" /> 
           <span>PODPLAY</span>
         </a>
         
