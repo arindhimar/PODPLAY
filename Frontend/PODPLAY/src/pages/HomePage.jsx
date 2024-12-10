@@ -1,11 +1,10 @@
 import { useState } from 'react';
-import Sidebar from '../components/Sidebar'; // Import Sidebar component
-import RecommendationsBar from '../components/RecommendationsBar'; // Import RecommendationsBar component
-import MusicPlayer from '../components/MusicPlayer'; // Import RecommendationsBar component
+import Sidebar from '../components/Sidebar'; // Sidebar component
+import RecommendationsBar from '../components/RecommendationsBar'; // RecommendationsBar component
+import MusicPlayer from '../components/MusicPlayer'; // MusicPlayer component
 
-import './HomePage.css'; // Import the CSS file for styling
+import './HomePage.css'; // CSS file for styling
 import '@fortawesome/fontawesome-free/css/all.min.css';
-
 
 function HomePage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Sidebar visibility state
@@ -24,13 +23,17 @@ function HomePage() {
   return (
     <div className="home-page">
       {/* Sidebar */}
-      {/* <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} /> */}
+      <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
 
       {/* Main Content */}
-      <div className="main-content">
-        <MusicPlayer/>
-        {/* RecommendationsBar on the Right */}
-        {/* <RecommendationsBar cards={cards} /> */}
+      <div className="content-container">
+        {/* Music Player */}
+        <div className="music-player">
+          <MusicPlayer />
+        </div>
+
+        {/* Recommendations Bar */}
+        <RecommendationsBar cards={cards} />
       </div>
     </div>
   );

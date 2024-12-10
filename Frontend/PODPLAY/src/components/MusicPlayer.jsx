@@ -1,99 +1,86 @@
-import React, { useState, useRef, useEffect } from "react";
-import "./MusicPlayer.css"; // Ensure your styles are in App.css
+import React, { useState, useEffect, useRef } from "react";
+import "./MusicPlayer.css";
 
-const MusicPlayer = () => {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
-  const [volume, setVolume] = useState(1);
-  const [seekPosition, setSeekPosition] = useState(0);
-  const [isMuted, setIsMuted] = useState(false);
-  const audioRef = useRef(new Audio());
-  const [trackInfo, setTrackInfo] = useState({
+const tracks = [
+  {
+    src: "https://raw.githubusercontent.com/muhammederdem/mini-player/master/mp3/1.mp3",
+    albumArt: "https://raw.githubusercontent.com/muhammederdem/mini-player/master/img/1.jpg",
     trackTitle: "Track 1",
     bandName: "Band 1",
     duration: "3:09",
-    albumArt: "https://raw.githubusercontent.com/muhammederdem/mini-player/master/img/1.jpg",
-  });
+  },
+  {
+    src: "https://raw.githubusercontent.com/muhammederdem/mini-player/master/mp3/2.mp3",
+    albumArt: "https://raw.githubusercontent.com/muhammederdem/mini-player/master/img/2.jpg",
+    trackTitle: "Track 2",
+    bandName: "Band 2",
+    duration: "5:29",
+  },
+  {
+    src: "https://raw.githubusercontent.com/muhammederdem/mini-player/master/mp3/3.mp3",
+    albumArt: "https://raw.githubusercontent.com/muhammederdem/mini-player/master/img/3.jpg",
+    trackTitle: "Track 3",
+    bandName: "Band 3",
+    duration: "4:15",
+  },
+];
 
-  const tracks = [
-    {
-      src: "https://raw.githubusercontent.com/muhammederdem/mini-player/master/mp3/1.mp3",
-      albumArt: "https://raw.githubusercontent.com/muhammederdem/mini-player/master/img/1.jpg",
-      trackTitle: "Track 1",
-      bandName: "Band 1",
-      duration: "3:09",
-    },
-    {
-      src: "https://raw.githubusercontent.com/muhammederdem/mini-player/master/mp3/2.mp3",
-      albumArt: "https://raw.githubusercontent.com/muhammederdem/mini-player/master/img/2.jpg",
-      trackTitle: "Track 2",
-      bandName: "Band 2",
-      duration: "5:29",
-    },
-    {
-      src: "https://raw.githubusercontent.com/muhammederdem/mini-player/master/mp3/3.mp3",
-      albumArt: "https://raw.githubusercontent.com/muhammederdem/mini-player/master/img/3.jpg",
-      trackTitle: "Track 3",
-      bandName: "Band 3",
-      duration: "4:10",
-    },
-  ];
+const MusicPlayer = () => {
+  const [currentTrack, setCurrentTrack] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState("0:00");
+  const [trackDuration, setTrackDuration] = useState("0:00");
+  const audioRef = useRef(new Audio(tracks[0].src));
 
   useEffect(() => {
-    // Set the current track info when the track changes
-    const currentTrack = tracks[currentTrackIndex];
-    setTrackInfo(currentTrack);
-    audioRef.current.src = currentTrack.src;
-  }, [currentTrackIndex]);
+    const audio = audioRef.current;
+
+    const updateTime = () => {
+      const minutes = Math.floor(audio.currentTime / 60);
+      const seconds = Math.floor(audio.currentTime % 60);
+      setCurrentTime(`${minutes}:${seconds < 10 ? "0" + seconds : seconds}`);
+    };
+
+    const setDuration = () => {
+      const minutes = Math.floor(audio.duration / 60);
+      const seconds = Math.floor(audio.duration % 60);
+      setTrackDuration(`${minutes}:${seconds < 10 ? "0" + seconds : seconds}`);
+    };
+
+    audio.addEventListener("timeupdate", updateTime);
+    audio.addEventListener("loadedmetadata", setDuration);
+
+    return () => {
+      audio.removeEventListener("timeupdate", updateTime);
+      audio.removeEventListener("loadedmetadata", setDuration);
+    };
+  }, []);
 
   const togglePlayPause = () => {
+    const audio = audioRef.current;
     if (isPlaying) {
-      audioRef.current.pause();
+      audio.pause();
     } else {
-      audioRef.current.play();
+      audio.play();
     }
     setIsPlaying(!isPlaying);
   };
 
-  const handleVolumeChange = (e) => {
-    setVolume(e.target.value);
-    audioRef.current.volume = e.target.value;
+  const changeTrack = (direction) => {
+    const nextTrack =
+      (currentTrack + direction + tracks.length) % tracks.length;
+    setCurrentTrack(nextTrack);
+    const audio = audioRef.current;
+    audio.src = tracks[nextTrack].src;
+    audio.play();
+    setIsPlaying(true);
   };
-
-  const handleSeekChange = (e) => {
-    setSeekPosition(e.target.value);
-    audioRef.current.currentTime = e.target.value;
-  };
-
-  const handleNextTrack = () => {
-    setCurrentTrackIndex((prevIndex) => (prevIndex + 1) % tracks.length);
-  };
-
-  const handlePrevTrack = () => {
-    setCurrentTrackIndex(
-      (prevIndex) => (prevIndex - 1 + tracks.length) % tracks.length
-    );
-  };
-
-  const toggleMute = () => {
-    setIsMuted(!isMuted);
-    audioRef.current.muted = !isMuted;
-  };
-
-  useEffect(() => {
-    // Sync the current time with the seek position
-    const interval = setInterval(() => {
-      setSeekPosition(audioRef.current.currentTime);
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, []);
 
   return (
-    <div className="music-controller">
+    <div className="music-container">
       <div id="volume">
-        <button id="muteBtn" onClick={toggleMute}>
-          <i className={isMuted ? "fas fa-volume-mute" : "fas fa-volume-up"}></i>
+        <button id="muteBtn">
+          <i className="fas fa-volume-up"></i>
         </button>
         <div id="volume-bar">
           <input
@@ -102,18 +89,21 @@ const MusicPlayer = () => {
             min="0"
             max="1"
             step="0.01"
-            value={volume}
-            onChange={handleVolumeChange}
+            defaultValue="1"
+            onChange={(e) =>
+              (audioRef.current.volume = parseFloat(e.target.value))
+            }
           />
           <div id="volumeIndicator" className="volume-indicator"></div>
         </div>
       </div>
+      <img id="albumArt" src={tracks[currentTrack].albumArt} alt="Album Art" />
       <div id="fade"></div>
       <div id="uiWrap">
         <div className="audio-info">
           <div className="track-info">
-            <div id="trackTitle">{trackInfo.trackTitle}</div>
-            <div id="bandName">{trackInfo.bandName}</div>
+            <div id="trackTitle">{tracks[currentTrack].trackTitle}</div>
+            <div id="bandName">{tracks[currentTrack].bandName}</div>
             <button id="likeBtn">
               <i className="far fa-heart"></i>
             </button>
@@ -124,13 +114,16 @@ const MusicPlayer = () => {
               id="seekSlider"
               min="0"
               step="1"
-              value={seekPosition}
-              onChange={handleSeekChange}
+              value={audioRef.current.currentTime}
+              max={audioRef.current.duration || 0}
+              onChange={(e) =>
+                (audioRef.current.currentTime = parseFloat(e.target.value))
+              }
             />
             <div id="bufferingIndicator" className="buffering-indicator"></div>
             <div id="seekIndicator" className="seek-indicator"></div>
-            <div id="currentTime">{Math.floor(seekPosition / 60)}:{Math.floor(seekPosition % 60)}</div>
-            <div id="trackTime">{trackInfo.duration}</div>
+            <div id="currentTime">{currentTime}</div>
+            <div id="trackTime">{trackDuration}</div>
           </div>
         </div>
         <div className="audio-controls">
@@ -138,13 +131,13 @@ const MusicPlayer = () => {
             <button id="loopBtn">
               <i className="fas fa-redo"></i>
             </button>
-            <button id="prevBtn" onClick={handlePrevTrack}>
+            <button id="prevBtn" onClick={() => changeTrack(-1)}>
               <i className="fas fa-step-backward"></i>
             </button>
             <button id="playPauseBtn" onClick={togglePlayPause}>
-              <i className={isPlaying ? "fas fa-pause" : "fas fa-play"}></i>
+              <i className={`fas ${isPlaying ? "fa-pause" : "fa-play"}`}></i>
             </button>
-            <button id="nextBtn" onClick={handleNextTrack}>
+            <button id="nextBtn" onClick={() => changeTrack(1)}>
               <i className="fas fa-step-forward"></i>
             </button>
             <button id="shuffleBtn">
