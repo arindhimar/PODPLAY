@@ -1,11 +1,15 @@
-import React from 'react';
-import PropTypes from 'prop-types'; // Import PropTypes for validation
-import './RecommendationsBar.css'; // Import the CSS file
-import HoverCard from './HoverCard'; // Assuming HoverCard is another component
+import React from "react";
+import AnimatedSearch from "./AnimatedSearch";
+import HoverCard from "./HoverCard";
+import PropTypes from "prop-types";
+import "./RecommendationsBar.css";
 
-const RecommendationsBar = ({ cards = [] }) => { // Default value as empty array
+const RecommendationsBar = ({ cards = [] }) => {
   return (
     <div id="recommendations-bar">
+      <div className="search-container">
+        <AnimatedSearch />
+      </div>
       <div id="recommendations-content">
         {cards.length > 0 ? (
           cards.map((card, index) => (
@@ -17,14 +21,13 @@ const RecommendationsBar = ({ cards = [] }) => { // Default value as empty array
             />
           ))
         ) : (
-          <p>No recommendations available</p> // Optional: display a message if no cards are available
+          <p>No recommendations available</p>
         )}
       </div>
     </div>
   );
 };
 
-// PropTypes for validation
 RecommendationsBar.propTypes = {
   cards: PropTypes.arrayOf(
     PropTypes.shape({
@@ -36,3 +39,4 @@ RecommendationsBar.propTypes = {
 };
 
 export default RecommendationsBar;
+

@@ -1,6 +1,6 @@
 :root {
   --recommendations-background: #88c0d0;
-  --recommendations-bar-width: 270px;
+  --recommendations-bar-width: 370px;
   --recommendations-dark-primary: #1b1f24;
   --recommendations-light-primary: #f5f6fa;
   --recommendations-accent-color: #88c0d0;
@@ -24,14 +24,21 @@ body {
   color: white;
   z-index: 999;
   box-shadow: -4px 0px 6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
 }
 
+.search-container {
+  padding: 10px;
+  background-color: var(--recommendations-dark-primary);
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+}
 
 #recommendations-content {
   overflow-y: auto;
-  max-height: 100%;
+  flex-grow: 1;
   overflow-x: hidden;
-  height: 100%;
 }
 
 #recommendations-content::-webkit-scrollbar {
@@ -42,3 +49,21 @@ body {
   border-radius: 10px;
   background-color: #aaa;
 }
+
+@keyframes bubbling {
+  0% {
+    transform: translateY(0px);
+  }
+  25% {
+    transform: translateY(-5px);
+  }
+  50% {
+    transform: translateY(5px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+@import url('https://fonts.googleapis.com/css?family=Nunito:400,700,800,900');
+
