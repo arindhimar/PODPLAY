@@ -1,6 +1,8 @@
 :root {
     --background: #88c0d0;
-    --navbar-width: 256px;
+    --navbar-width: 300px;
+    --recommendations-bar-width: 370px;
+
     --navbar-width-min: 80px;
     --navbar-dark-primary: #1b1f24;
     --navbar-dark-secondary: #2c3e50;
@@ -52,7 +54,7 @@
     background-color: var(--navbar-dark-secondary);
     flex-shrink: 0;
     height: 100%;
-    padding: 1rem;
+    padding: 11rem;
     margin: 0;
   }
   
@@ -104,11 +106,11 @@
   }
   
   .recommendations {
-    width: var(--navbar-width);
+    width: var(--recommendations-bar-width);
     background-color: var(--navbar-dark-secondary);
     flex-shrink: 0;
     height: 100%;
-    padding: 1rem;
+    padding: 13rem;
     margin: 0;
   }
   

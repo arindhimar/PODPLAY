@@ -23,6 +23,8 @@ const RecommendationsBar = ({ onCardClick }) => {
       image: "image_url_2",
       url: "url_2",
     },
+
+
   ];
 
   return (

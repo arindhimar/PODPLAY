@@ -1,165 +1,137 @@
-import React, { useState, useEffect, useRef } from "react";
-import "./MusicPlayer.css";
+import React, { useState, useRef, useEffect } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPlay, faPause, faStepBackward, faStepForward, faVolumeUp, faVolumeMute } from '@fortawesome/free-solid-svg-icons';
+import './MusicPlayer.css';
 
-const MusicPlayer = ({ card }) => {
+
+const MusicPlayer = () => {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState("0:00");
-  const [trackDuration, setTrackDuration] = useState("0:00");
-  const [repeatMode, setRepeatMode] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [volume, setVolume] = useState(1);
+  const [isMuted, setIsMuted] = useState(false);
+
   const audioRef = useRef(null);
+  const progressRef = useRef(null);
 
-  useEffect(() => {
-    audioRef.current = new Audio();
-    return () => {
-      audioRef.current.pause();
-      audioRef.current = null;
-    };
-  }, []);
-
-  useEffect(() => {
-    const audio = audioRef.current;
-
-    const updateTime = () => {
-      const minutes = Math.floor(audio.currentTime / 60);
-      const seconds = Math.floor(audio.currentTime % 60);
-      setCurrentTime(`${minutes}:${seconds < 10 ? "0" + seconds : seconds}`);
-    };
-
-    const setDuration = () => {
-      const minutes = Math.floor(audio.duration / 60);
-      const seconds = Math.floor(audio.duration % 60);
-      setTrackDuration(`${minutes}:${seconds < 10 ? "0" + seconds : seconds}`);
-    };
-
-    audio.addEventListener("timeupdate", updateTime);
-    audio.addEventListener("loadedmetadata", setDuration);
-
-    return () => {
-      audio.removeEventListener("timeupdate", updateTime);
-      audio.removeEventListener("loadedmetadata", setDuration);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (card && audioRef.current) {
-      const newSrc = card.audio_url.replace(/_12(?=\.\w+$)/, "_320");
-      if (audioRef.current.src !== newSrc) {
-        audioRef.current.src = newSrc;
-        audioRef.current.load();
-        audioRef.current.play().then(() => {
-          setIsPlaying(true);
-        }).catch(error => {
-          console.error("Error playing audio:", error);
-        });
-      }
-    }
-  }, [card]);
-
-  useEffect(() => {
-    const audio = audioRef.current;
-    
-    const handleEnded = () => {
-      if (repeatMode) {
-        audio.currentTime = 0;
-        audio.play();
-      } else {
-        setIsPlaying(false);
-      }
-    };
-
-    audio.addEventListener("ended", handleEnded);
-
-    return () => {
-      audio.removeEventListener("ended", handleEnded);
-    };
-  }, [repeatMode]);
-
-  const togglePlayPause = () => {
-    const audio = audioRef.current;
-    if (isPlaying) {
-      audio.pause();
-    } else {
-      audio.play();
-    }
-    setIsPlaying(!isPlaying);
+  const currentTrack = {
+    title: "Neon Lights",
+    artist: "The Midnight",
+    cover: "/placeholder.svg?height=300&width=300"
   };
 
-  const toggleRepeat = () => {
-    setRepeatMode(!repeatMode);
-    audioRef.current.loop = !repeatMode;
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume;
+    }
+  }, [volume]);
+
+  const togglePlay = () => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const handleTimeUpdate = () => {
+    if (audioRef.current) {
+      setCurrentTime(audioRef.current.currentTime);
+      setDuration(audioRef.current.duration);
+    }
+  };
+
+  const handleProgressChange = (e) => {
+    const newTime = e.target.value;
+    setCurrentTime(newTime);
+    if (audioRef.current) {
+      audioRef.current.currentTime = newTime;
+    }
+  };
+
+  const handleVolumeChange = (e) => {
+    const newVolume = parseFloat(e.target.value);
+    setVolume(newVolume);
+    setIsMuted(newVolume === 0);
+  };
+
+  const toggleMute = () => {
+    if (audioRef.current) {
+      if (isMuted) {
+        audioRef.current.volume = volume;
+        setIsMuted(false);
+      } else {
+        audioRef.current.volume = 0;
+        setIsMuted(true);
+      }
+    }
+  };
+
+  const formatTime = (time) => {
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
   return (
-    <div className="music-container">
-      <div id="volume">
-        <button id="muteBtn">
-          <i className="fas fa-volume-up"></i>
-        </button>
-        <div id="volume-bar">
+    <div className="music-player">
+      <div className="player-content">
+        <img src={currentTrack.cover} alt={`${currentTrack.title} cover`} className="cover-art" />
+        <div className="track-info">
+          <h3 className="track-title">{currentTrack.title}</h3>
+          <p className="track-artist">{currentTrack.artist}</p>
+        </div>
+        <div className="controls">
+          <button className="control-btn" onClick={() => console.log('Previous track')}>
+            <FontAwesomeIcon icon={faStepBackward} />
+          </button>
+          <button className="control-btn play-pause" onClick={togglePlay}>
+            <FontAwesomeIcon icon={isPlaying ? faPause : faPlay} />
+          </button>
+          <button className="control-btn" onClick={() => console.log('Next track')}>
+            <FontAwesomeIcon icon={faStepForward} />
+          </button>
+        </div>
+        <div className="progress-container">
           <input
             type="range"
-            id="volumeSlider"
+            min="0"
+            max={duration || 0}
+            value={currentTime}
+            onChange={handleProgressChange}
+            className="progress-bar"
+            ref={progressRef}
+          />
+          <div className="time-display">
+            <span>{formatTime(currentTime)}</span>
+            <span>{formatTime(duration)}</span>
+          </div>
+        </div>
+        <div className="volume-control">
+          <button className="volume-btn" onClick={toggleMute}>
+            <FontAwesomeIcon icon={isMuted ? faVolumeMute : faVolumeUp} />
+          </button>
+          <input
+            type="range"
             min="0"
             max="1"
             step="0.01"
-            defaultValue="1"
-            onChange={(e) => (audioRef.current.volume = parseFloat(e.target.value))}
+            value={volume}
+            onChange={handleVolumeChange}
+            className="volume-slider"
           />
-          <div id="volumeIndicator" className="volume-indicator"></div>
         </div>
       </div>
-      {card && (
-        <>
-          <div className="music-info">
-            <img id="albumArt" src={card.image.replace("50x50","500x500")} alt="Album Art" />
-            <div className="track-details">
-              <div id="trackTitle">{card.title}</div>
-              <div id="bandName">{card.artist}</div>
-            </div>
-          </div>
-          <div className="music-controls">
-            <div className="seek-bar">
-              <input
-                type="range"
-                id="seekSlider"
-                min="0"
-                step="1"
-                value={audioRef.current ? audioRef.current.currentTime : 0}
-                max={audioRef.current ? audioRef.current.duration || 0 : 0}
-                onChange={(e) => {
-                  if (audioRef.current) {
-                    audioRef.current.currentTime = parseFloat(e.target.value);
-                  }
-                }}
-              />
-              <div id="bufferingIndicator" className="buffering-indicator"></div>
-              <div id="seekIndicator" className="seek-indicator"></div>
-              <div id="currentTime">{currentTime}</div>
-              <div id="trackTime">{trackDuration}</div>
-            </div>
-            <div className="playback-controls">
-              <button id="loopBtn" onClick={toggleRepeat}>
-                <i className={`fas fa-redo ${repeatMode ? 'active' : ''}`}></i>
-              </button>
-              <button id="prevBtn" disabled>
-                <i className="fas fa-step-backward"></i>
-              </button>
-              <button id="playPauseBtn" onClick={togglePlayPause}>
-                <i className={`fas ${isPlaying ? "fa-pause" : "fa-play"}`}></i>
-              </button>
-              <button id="nextBtn" disabled>
-                <i className="fas fa-step-forward"></i>
-              </button>
-              <button id="shuffleBtn">
-                <i className="fas fa-random"></i>
-              </button>
-            </div>
-          </div>
-        </>
-      )}
+      <audio
+        ref={audioRef}
+        src="/path-to-your-audio-file.mp3"
+        onTimeUpdate={handleTimeUpdate}
+      />
     </div>
   );
-
 };
 
 export default MusicPlayer;
