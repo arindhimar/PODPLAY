@@ -1,47 +1,34 @@
-import { useState } from 'react';
-import Sidebar from '../components/Sidebar'; // Sidebar component
-import RecommendationsBar from '../components/RecommendationsBar'; // RecommendationsBar component
-import MusicPlayer from '../components/MusicPlayer'; // MusicPlayer component
-
-import './HomePage.css'; // CSS file for styling
-import '@fortawesome/fontawesome-free/css/all.min.css';
-
-function HomePage() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Sidebar visibility state
-
-  const toggleSidebar = () => {
-    setIsSidebarOpen((prev) => !prev); // Toggle the sidebar visibility
-  };
-
-  const cards = [
-    { color: "#ff0000", title: "Card 1", description: "This is card 1 description" },
-    { color: "#00ff00", title: "Card 2", description: "This is card 2 description" },
-    { color: "#0000ff", title: "Card 3", description: "This is card 3 description" },
-    { color: "#ff00ff", title: "Card 4", description: "This is card 4 description" },
-    { color: "#ff0000", title: "Card 1", description: "This is card 1 description" },
-    { color: "#00ff00", title: "Card 2", description: "This is card 2 description" },
-    { color: "#0000ff", title: "Card 3", description: "This is card 3 description" },
-    { color: "#ff00ff", title: "Card 4", description: "This is card 4 description" },
-    
-  ];
-
+export default function HomePage() {
   return (
     <div className="home-page">
-      {/* Sidebar */}
-      <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+      <aside className="sidebar">
+        <div className="sidebar-content">Sidebar</div>
+      </aside>
       
-      {/* Main Content */}
-      <div className="content-container">
-        {/* Music Player */}
-        <div className="music-player">
-          <MusicPlayer />
+      <main className="main-content">
+        <div className="search-container">
+          <div className="search-bar">Animated SearchBar</div>
         </div>
-
-        {/* Recommendations Bar */}
-        <RecommendationsBar cards={cards} />
-      </div>
+        
+        <div className="animation-container">
+          <div className="animation-content">
+            Random Animations (Future implementation)
+          </div>
+        </div>
+        
+        <div className="player-container">
+          <div className="music-player">
+            MusicPlayer
+          </div>
+        </div>
+      </main>
+      
+      <aside className="recommendations">
+        <div className="recommendations-content">
+          RecommendationBar
+        </div>
+      </aside>
     </div>
   );
 }
 
-export default HomePage;

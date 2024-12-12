@@ -1,7 +1,23 @@
-import React from "react";
-import "./HoverCard.css"; // CSS for styling
+import React, { useEffect, useState } from "react";
+import PropTypes from "prop-types";
+import "./HoverCard.css";
 
-const HoverCard = ({ color = "#ff0000", children, title, description }) => {
+const HoverCard = ({
+  title,
+  description,
+  artist,
+  audioUrl,
+  image,
+  url,
+  onClick,
+}) => {
+  const [color, setColor] = useState("#ff0000");
+
+  useEffect(() => {
+    const randomColor = `hsl(${Math.floor(Math.random() * 360)}, 70%, 60%)`;
+    setColor(randomColor);
+  }, []);
+
   const handleMouseMove = (e) => {
     const card = e.currentTarget;
     const rect = card.getBoundingClientRect();
@@ -23,12 +39,30 @@ const HoverCard = ({ color = "#ff0000", children, title, description }) => {
       style={{ "--color": color }}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
+      onClick={onClick}
     >
-      {title && <h3 className="hover-card-title">{title}</h3>}
-      {description && <p className="hover-card-description">{description}</p>}
-      {children && <div className="hover-card-content">{children}</div>}
+      <img
+        src={image}
+        alt={`${title} cover`}
+        className="hover-card-image"
+      />
+      <div className="hover-card-details">
+        <h3 className="hover-card-title">{title}</h3>
+        {artist && <p className="hover-card-artist">{artist}</p>}
+      </div>
     </div>
   );
 };
 
+HoverCard.propTypes = {
+  title: PropTypes.string.isRequired,
+  description: PropTypes.string,
+  artist: PropTypes.string,
+  audioUrl: PropTypes.string,
+  image: PropTypes.string,
+  url: PropTypes.string,
+  onClick: PropTypes.func.isRequired,
+};
+
 export default HoverCard;
+

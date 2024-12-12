@@ -1,12 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from "react";
+import PropTypes from "prop-types";
+import axios from "axios"; 
+const bubbleColors = ["#4C83F0", "#D1333B", "#EEB80B", "#4C83F0", "#1CAF60", "#D1333B"];
+const letters = ["S", "E", "A", "R", "C", "H"];
 
-const bubbleColors = ['#4C83F0', '#D1333B', '#EEB80B', '#4C83F0', '#1CAF60', '#D1333B'];
-const letters = ['S', 'E', 'A', 'R', 'C', 'H'];
-
-const AnimatedSearch = () => {
+const AnimatedSearch = ({ onSearch }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [inputValue, setInputValue] = useState('');
+  const [inputValue, setInputValue] = useState("");
   const inputRef = useRef(null);
+
 
   useEffect(() => {
     if (isExpanded && inputRef.current) {
@@ -14,71 +16,91 @@ const AnimatedSearch = () => {
     }
   }, [isExpanded]);
 
+  const handleSearch = async () => {
+    if (inputValue.length > 2) {
+      try {
+        const response = await axios.get("http://127.0.0.1:5000/songs/search", {
+          params: { query: inputValue },
+        });
+
+        if (onSearch) {
+          console.log(response.data)
+          onSearch(response.data); 
+        }
+      } catch (error) {
+        console.log("Error fetching data:", error);
+      }
+    }
+  };
+
+  const handleInputChange = (e) => {
+    setInputValue(e.target.value);
+    handleSearch();
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Submitted:', inputValue);
-    setInputValue('');
+    handleSearch();
   };
 
   const containerStyle = {
-    position: 'relative',
-    width: '100%',
-    height: '60px',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
+    position: "relative",
+    width: "100%",
+    height: "60px",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
   };
 
   const searchWrapperStyle = {
-    width: '100%',
-    height: '50px',
-    position: 'relative',
-    filter: 'url(#goo)',
+    width: "100%",
+    height: "50px",
+    position: "relative",
+    filter: "url(#goo)",
   };
 
   const searchBoxStyle = {
-    position: 'absolute',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: isExpanded ? '100%' : '50px',
-    height: '50px',
-    background: '#333',
-    borderRadius: isExpanded ? '10px' : '25px',
-    transition: 'all 1s',
+    position: "absolute",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: isExpanded ? "100%" : "50px",
+    height: "50px",
+    background: "#333",
+    borderRadius: isExpanded ? "10px" : "25px",
+    transition: "all 1s",
     zIndex: 1,
   };
 
   const inputStyle = {
     fontFamily: "'Nunito', sans-serif",
     fontWeight: 800,
-    width: '90%',
-    height: '20px',
-    border: 'none',
-    background: 'transparent',
-    outline: 'none',
-    color: '#f9f9f9',
-    caretColor: 'transparent',
+    width: "90%",
+    height: "20px",
+    border: "none",
+    background: "transparent",
+    outline: "none",
+    color: "#f9f9f9",
+    caretColor: "#ffffff", // Visible caret color
   };
 
   const bubbleStyle = (index) => ({
-    position: 'absolute',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '50px',
-    height: '50px',
-    background: '#333',
-    borderRadius: '25px',
+    position: "absolute",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "50px",
+    height: "50px",
+    background: "#333",
+    borderRadius: "25px",
     left: `${(index + 1) * 50}px`,
-    animation: 'bubbling 1s infinite cubic-bezier(0.075, 0.82, 0.165, 1)',
+    animation: "bubbling 1s infinite cubic-bezier(0.075, 0.82, 0.165, 1)",
   });
 
-  
   const textStyle = {
     fontFamily: "'Nunito', sans-serif",
     fontWeight: 800,
-    color: '#f9f9f9',
+    color: "#f9f9f9",
     margin: 0,
   };
 
@@ -98,7 +120,7 @@ const AnimatedSearch = () => {
                 style={inputStyle}
                 placeholder=">"
                 value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
+                onChange={handleInputChange}
               />
             </form>
           ) : (
@@ -117,7 +139,8 @@ const AnimatedSearch = () => {
           </div>
         )}
       </div>
-      <svg xmlns="http://www.w3.org/2000/svg" version="1.1" style={{ display: 'none' }}>
+
+      <svg xmlns="http://www.w3.org/2000/svg" version="1.1" style={{ display: "none" }}>
         <defs>
           <filter id="goo">
             <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur" />
@@ -135,5 +158,8 @@ const AnimatedSearch = () => {
   );
 };
 
-export default AnimatedSearch;
+AnimatedSearch.propTypes = {
+  onSearch: PropTypes.func.isRequired, 
+};
 
+export default AnimatedSearch;
