@@ -1,22 +1,20 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlay, faPause, faStepBackward, faStepForward, faVolumeUp, faVolumeMute } from '@fortawesome/free-solid-svg-icons';
-import './MusicPlayer.css';
-
+import { Slider } from "@/components/ui/slider";
+import { Button } from "@/components/ui/button";
+import { Volume2, VolumeX, SkipBack, SkipForward, Play, Pause } from 'lucide-react';
 
 const MusicPlayer = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
 
   const audioRef = useRef(null);
-  const progressRef = useRef(null);
 
   const currentTrack = {
     title: "Neon Lights",
     artist: "The Midnight",
+    duration: 237, // 3:57 in seconds
     cover: "/placeholder.svg?height=300&width=300"
   };
 
@@ -40,22 +38,13 @@ const MusicPlayer = () => {
   const handleTimeUpdate = () => {
     if (audioRef.current) {
       setCurrentTime(audioRef.current.currentTime);
-      setDuration(audioRef.current.duration);
     }
   };
 
-  const handleProgressChange = (e) => {
-    const newTime = e.target.value;
-    setCurrentTime(newTime);
-    if (audioRef.current) {
-      audioRef.current.currentTime = newTime;
-    }
-  };
-
-  const handleVolumeChange = (e) => {
-    const newVolume = parseFloat(e.target.value);
-    setVolume(newVolume);
-    setIsMuted(newVolume === 0);
+  const handleVolumeChange = (newVolume) => {
+    const volumeValue = newVolume[0];
+    setVolume(volumeValue);
+    setIsMuted(volumeValue === 0);
   };
 
   const toggleMute = () => {
@@ -77,59 +66,65 @@ const MusicPlayer = () => {
   };
 
   return (
-    <div className="music-player">
-      <div className="player-content">
-        <img src={currentTrack.cover} alt={`${currentTrack.title} cover`} className="cover-art" />
-        <div className="track-info">
-          <h3 className="track-title">{currentTrack.title}</h3>
-          <p className="track-artist">{currentTrack.artist}</p>
-        </div>
-        <div className="controls">
-          <button className="control-btn" onClick={() => console.log('Previous track')}>
-            <FontAwesomeIcon icon={faStepBackward} />
-          </button>
-          <button className="control-btn play-pause" onClick={togglePlay}>
-            <FontAwesomeIcon icon={isPlaying ? faPause : faPlay} />
-          </button>
-          <button className="control-btn" onClick={() => console.log('Next track')}>
-            <FontAwesomeIcon icon={faStepForward} />
-          </button>
-        </div>
-        <div className="progress-container">
-          <input
-            type="range"
-            min="0"
-            max={duration || 0}
-            value={currentTime}
-            onChange={handleProgressChange}
-            className="progress-bar"
-            ref={progressRef}
-          />
-          <div className="time-display">
-            <span>{formatTime(currentTime)}</span>
-            <span>{formatTime(duration)}</span>
+    <div className="music-player gradient-background">
+      <div className="glass-effect">
+        <div className="w-full max-w-md mx-auto p-6 rounded-xl shadow-lg" style={{
+          background: 'linear-gradient(135deg, #4A0E4E, #170B1B)',
+        }}>
+          <div className="mb-4">
+            <img src={currentTrack.cover} alt={`${currentTrack.title} cover`} className="w-full h-64 object-cover rounded-lg shadow-md" />
           </div>
-        </div>
-        <div className="volume-control">
-          <button className="volume-btn" onClick={toggleMute}>
-            <FontAwesomeIcon icon={isMuted ? faVolumeMute : faVolumeUp} />
-          </button>
-          <input
-            type="range"
-            min="0"
-            max="1"
-            step="0.01"
-            value={volume}
-            onChange={handleVolumeChange}
-            className="volume-slider"
+          <div className="text-white mb-4">
+            <h2 className="text-2xl font-bold">{currentTrack.title}</h2>
+            <p className="text-sm opacity-75">{currentTrack.artist}</p>
+          </div>
+          <div className="mb-4">
+            <Slider
+              value={[currentTime]}
+              max={currentTrack.duration}
+              step={1}
+              className="w-full"
+              onValueChange={(value) => {
+                if (audioRef.current) {
+                  audioRef.current.currentTime = value[0];
+                }
+              }}
+            />
+            <div className="flex justify-between text-xs text-white opacity-75 mt-1">
+              <span>{formatTime(currentTime)}</span>
+              <span>{formatTime(currentTrack.duration)}</span>
+            </div>
+          </div>
+          <div className="flex justify-center items-center space-x-4 mb-4">
+            <Button variant="ghost" size="icon" className="text-white hover:text-orange-400 transition-colors">
+              <SkipBack className="h-6 w-6" />
+            </Button>
+            <Button onClick={togglePlay} size="icon" className="bg-purple-600 hover:bg-purple-700 text-white rounded-full w-14 h-14 flex items-center justify-center">
+              {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6" />}
+            </Button>
+            <Button variant="ghost" size="icon" className="text-white hover:text-orange-400 transition-colors">
+              <SkipForward className="h-6 w-6" />
+            </Button>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button variant="ghost" size="icon" onClick={toggleMute} className="text-white hover:text-orange-400 transition-colors">
+              {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+            </Button>
+            <Slider
+              value={[volume]}
+              max={1}
+              step={0.01}
+              className="w-full"
+              onValueChange={handleVolumeChange}
+            />
+          </div>
+          <audio
+            ref={audioRef}
+            src="/path-to-your-audio-file.mp3"
+            onTimeUpdate={handleTimeUpdate}
           />
         </div>
       </div>
-      <audio
-        ref={audioRef}
-        src="/path-to-your-audio-file.mp3"
-        onTimeUpdate={handleTimeUpdate}
-      />
     </div>
   );
 };

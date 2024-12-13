@@ -9,7 +9,7 @@ app = Flask(__name__)
 CORS(app)  
 
 # Register Blueprints
-app.register_blueprint(song_blueprint, url_prefix='/songs')  
+app.register_blueprint(song_blueprint, url_prefix='/songs')
 
 if __name__ == "__main__":
     app.run(debug=True)

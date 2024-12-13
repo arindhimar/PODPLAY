@@ -1,9 +1,36 @@
+.search-results-container {
+  background-color: #1e1e1e;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  max-width: 600px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.search-results-header {
+  display: flex;
+  align-items: center;
+  padding: 16px 24px;
+  background-color: #2a2a2a;
+  border-bottom: 1px solid #3a3a3a;
+}
+
+.search-icon {
+  color: #b3b3b3;
+  margin-right: 12px;
+}
+
+.search-results-header h2 {
+  color: #ffffff;
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0;
+}
+
 .search-results {
-  background-color: #282828;
-  border-radius: 8px;
   max-height: 400px;
   overflow-y: auto;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
   padding: 16px;
 }
 
@@ -12,12 +39,55 @@
 }
 
 .search-results::-webkit-scrollbar-thumb {
-  background-color: #535353;
+  background-color: #4a4a4a;
   border-radius: 4px;
 }
 
 .search-results::-webkit-scrollbar-track {
-  background-color: #282828;
+  background-color: #2a2a2a;
+}
+
+.search-result-item {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  border-radius: 8px;
+  transition: background-color 0.3s ease;
+  cursor: pointer;
+}
+
+.search-result-item:hover {
+  background-color: #2a2a2a;
+}
+
+.search-result-image {
+  width: 60px;
+  height: 60px;
+  border-radius: 4px;
+  object-fit: cover;
+  margin-right: 16px;
+}
+
+.search-result-info {
+  flex-grow: 1;
+}
+
+.search-result-info h3 {
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+}
+
+.search-result-info p {
+  color: #b3b3b3;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.music-icon {
+  color: #1db954;
+  margin-left: 16px;
 }
 
 .no-results {
@@ -25,5 +95,54 @@
   padding: 24px;
   color: #b3b3b3;
   font-size: 1.1rem;
+}
+
+.search-result-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.action-button {
+  background: none;
+  border: none;
+  color: #b3b3b3;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.action-button:hover {
+  color: #1db954;
+}
+
+@media (max-width: 480px) {
+  .search-results-container {
+    border-radius: 0;
+  }
+
+  .search-results-header {
+    padding: 12px 16px;
+  }
+
+  .search-results {
+    padding: 12px;
+  }
+
+  .search-result-item {
+    padding: 8px;
+  }
+
+  .search-result-image {
+    width: 50px;
+    height: 50px;
+  }
+
+  .search-result-info h3 {
+    font-size: 0.9rem;
+  }
+
+  .search-result-info p {
+    font-size: 0.8rem;
+  }
 }
 

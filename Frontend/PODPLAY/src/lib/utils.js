@@ -1,4 +1,5 @@
 // src/lib/utils.js
+import { twMerge } from "tailwind-merge"
 
 // Classnames utility function
 export function cn(...classes) {

@@ -33,7 +33,7 @@ body {
 }
 
 #nav-toggle:checked~#nav-header label[for="nav-toggle"] {
-  left: 30%;
+  left: 40%;
   transform: translate(-50%);
 }
 
