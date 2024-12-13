@@ -161,22 +161,25 @@ const HorizontalMusicPlayer = ({ currentTrack, onSkipBack, onSkipForward, onShuf
     }
   };
 
-  const handleCanPlay = async() => {
+  const handleCanPlay = async () => {
     setIsLoaded(true); 
-    console.log("Herhkahdjh")
+    console.log("Herhkahdjh");
     try {
-      const response = await axios.get("http://127.0.0.1:5000/songs/search", {
-        params: { query: inputValue },
+      const response = await axios.get("http://127.0.0.1:5000/songs/suggestions", {
+        params: { 
+          song_id: currentTrack.id, 
+        },
       });
-
-      if (onSearch) {
-        console.log(response.data);
-        onSearch(response.data);
-      }
+      console.log(response.data);
+  
+      // if (onSearch) {
+      //   // onSearch(response.data);
+      // }
     } catch (error) {
       console.log("Error fetching data:", error);
     }
   };
+  
 
   if (!currentTrack) {
     return <div className="horizontal-music-player">No track selected</div>;

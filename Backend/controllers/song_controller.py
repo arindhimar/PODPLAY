@@ -9,13 +9,14 @@ song_blueprint = Blueprint('song_blueprint', __name__)
 logging.basicConfig(level=logging.INFO)
 
 # Define base URL for the Saavn API
-BASE_URL = "https://saavn.dev/api"
+BASE_URL = "http://localhost:3000"
 
 
 # Search Songs by query (Updated to match '/songs/search')
 @song_blueprint.route('/search', methods=['GET'])
 def search_songs():
     query = request.args.get('query')
+    
 
     if not query:
         return jsonify({"error": "Query parameter is required"}), 400
@@ -25,7 +26,7 @@ def search_songs():
 
     try:
         logging.info(f"Searching songs for query: {query}")
-        response = requests.get(f"{BASE_URL}/search/songs", params=params)
+        response = requests.get(f"{BASE_URL}/api/search/songs", params=params)
         response.raise_for_status()
 
         data = response.json()
@@ -100,7 +101,7 @@ def get_song_by_id(song_id):
 def get_song_lyrics(song_id):
     try:
         logging.info(f"Fetching lyrics for song ID: {song_id}")
-        response = requests.get(f"{BASE_URL}/songs/{song_id}/lyrics")
+        response = requests.get(f"{BASE_URL}/api/songs/{song_id}/lyrics")
         response.raise_for_status()
 
         data = response.json()
@@ -126,13 +127,13 @@ def get_song_lyrics(song_id):
 def get_song_suggestions():
     song_id = request.args.get('song_id')
     limit = request.args.get('limit', 10)
-
+    print("fucking gooooo")
     if not song_id:
         return jsonify({"error": "song_id parameter is required"}), 400
 
     try:
         logging.info(f"Fetching song suggestions for song ID: {song_id}")
-        response = requests.get(f"{BASE_URL}/songs/{song_id}/suggestions", params={"limit": limit})
+        response = requests.get(f"{BASE_URL}/api/songs/{song_id}/suggestions", params={"limit": limit})
         response.raise_for_status()
 
         data = response.json()
