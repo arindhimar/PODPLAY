@@ -3,48 +3,32 @@ import HoverCard from "./HoverCard";
 import PropTypes from "prop-types";
 import "./RecommendationsBar.css";
 
-const RecommendationsBar = ({ onCardClick }) => {
-  // You might want to fetch recommendations from an API or use static data
-  const recommendations = [
-    // Add some sample recommendation data here
-    {
-      id: 1,
-      title: "Song 1",
-      artist: "Artist 1",
-      audio_url: "audio_url_1",
-      image: "image_url_1",
-      url: "url_1",
-    },
-    {
-      id: 2,
-      title: "Song 2",
-      artist: "Artist 2",
-      audio_url: "audio_url_2",
-      image: "image_url_2",
-      url: "url_2",
-    },
-
-
-  ];
-
+const RecommendationsBar = ({ suggestions, onTrackSelect }) => {
   return (
     <div id="recommendations-bar">
-      <h2>Recommendations</h2>
       <div id="recommendations-content">
-        {recommendations.length > 0 ? (
-          recommendations.map((card) => (
+        {suggestions.length > 0 ? (
+          suggestions.map((suggestion) => (
             <HoverCard
-              key={card.id}
-              title={card.title}
-              artist={card.artist}
-              audioUrl={card.audio_url}
-              image={card.image.toString().replaceAll("50", "150")}
-              url={card.url}
-              onClick={() => onCardClick(card)}
+              key={suggestion.id}
+              title={suggestion.title}
+              artist={suggestion.artist}
+              audioUrl={suggestion.audio_url}
+              image={suggestion.image[1].url}
+              url={suggestion.url}
+              onClick={() => onTrackSelect(suggestion)}
             />
           ))
         ) : (
-          <p>No recommendations available</p>
+          <HoverCard
+            key="0"
+            title="No Suggestions Found!!"
+            artist="No Suggestions Found!!"
+            audioUrl="No Suggestions Found!!"
+            image="No Suggestions Found!!"
+            url="No Suggestions Found!!"
+            onClick={() => onTrackSelect(suggestion)}
+          />
         )}
       </div>
     </div>
@@ -52,8 +36,8 @@ const RecommendationsBar = ({ onCardClick }) => {
 };
 
 RecommendationsBar.propTypes = {
-  onCardClick: PropTypes.func.isRequired,
+  suggestions: PropTypes.array.isRequired,
+  onTrackSelect: PropTypes.func.isRequired,
 };
 
 export default RecommendationsBar;
-

@@ -24,7 +24,7 @@ const AnimatedSearch = ({ onSearch }) => {
         });
 
         if (onSearch) {
-          console.log(response.data);
+          // console.log(response.data);
           onSearch(response.data);
         }
       } catch (error) {

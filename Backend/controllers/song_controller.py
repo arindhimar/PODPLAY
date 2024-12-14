@@ -36,7 +36,7 @@ def search_songs():
                     "id": item.get("id"),
                     "title": item.get("name"),
                     "album": item.get("album", {}).get("name", "Unknown Album"),
-                    "image": item.get("image", [{}])[-3].get("url", ""),
+                    "image": item.get("image"       ),
                     "url": item.get("url"),
                     "artist": ", ".join([artist['name'] for artist in item.get('artists', {}).get('primary', [])]),
                     "audio_url": item.get("downloadUrl", [{}])[-1].get("url", ""),
@@ -146,6 +146,7 @@ def get_song_suggestions():
                     "artist": ", ".join([artist['name'] for artist in item.get('artists', {}).get('primary', [])]),
                     "url": item['url'],
                     "audio_url": item.get("downloadUrl", [{}])[-1].get("url", ""),
+                    "image":item.get("image")
                 }
                 for item in data['data']
             ]

@@ -1,113 +1,35 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { SkipBack, SkipForward, Play, Pause, Volume2, VolumeX, Heart, Repeat, Shuffle } from 'lucide-react';
-import axios from "axios";
+import { Button } from "@/components/ui/button";
+import { Volume2, VolumeX, SkipBack, SkipForward, Play, Pause, Repeat, Shuffle, List } from 'lucide-react';
+import './HorizontalMusicPlayer.css'
 
-const TrackInfo = ({ track }) => (
-  <div className="track-info-container">
-    <img src={track.image.replace("50x50","250x250")} alt={`${track.title} cover`} className="cover-art" />
-    <div className="track-info">
-      <h2 className="track-title">{track.title}</h2>
-      <p className="track-artist">{track.artist}</p>
-    </div>
-  </div>
-);
-
-const PlaybackControls = ({ isPlaying, onTogglePlay, onSkipBack, onSkipForward }) => (
-  <div className="controls">
-    <Button variant="ghost" size="icon" className="control-btn" onClick={onSkipBack}>
-      <SkipBack className="h-4 w-4" />
-    </Button>
-    <Button onClick={onTogglePlay} size="icon" className="control-btn play-pause">
-      {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-    </Button>
-    <Button variant="ghost" size="icon" className="control-btn" onClick={onSkipForward}>
-      <SkipForward className="h-4 w-4" />
-    </Button>
-  </div>
-);
-
-const ProgressBar = ({ currentTime, duration, onProgressChange }) => {
-  const formatTime = (time) => {
-    const minutes = Math.floor(time / 60);
-    const seconds = Math.floor(time % 60);
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  };
-
-  return (
-    <div className="progress-container">
-      <Slider
-        value={[currentTime]}
-        max={duration}
-        step={1}
-        onValueChange={(value) => onProgressChange(value[0])}
-        className="progress-slider"
-      />
-      <div className="time-display">
-        <span>{formatTime(currentTime)}</span>
-        <span>{formatTime(duration)}</span>
-      </div>
-    </div>
-  );
-};
-
-const VolumeControl = ({ volume, isMuted, onVolumeChange, onToggleMute }) => (
-  <div className="volume-control">
-    <Button variant="ghost" size="icon" onClick={onToggleMute} className="volume-btn">
-      {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-    </Button>
-    <Slider
-      value={[volume]}
-      max={1}
-      step={0.01}
-      className="volume-slider"
-      onValueChange={(value) => onVolumeChange(value[0])}
-    />
-  </div>
-);
-
-const ExtraControls = ({ onShuffle }) => {
-  const [isLiked, setIsLiked] = useState(false);
-  const [isRepeat, setIsRepeat] = useState(false);
-  const [isShuffled, setIsShuffled] = useState(false);
-
-  const toggleLike = () => setIsLiked(!isLiked);
-  const toggleRepeat = () => setIsRepeat(!isRepeat);
-  const toggleShuffle = () => {
-    setIsShuffled(!isShuffled);
-    onShuffle(!isShuffled);
-  };
-
-  return (
-    <div className="extra-controls">
-      <Button variant="ghost" size="icon" onClick={toggleLike} className="control-btn">
-        <Heart className={`h-4 w-4 ${isLiked ? 'text-red-500' : 'text-gray-500'}`} />
-      </Button>
-      <Button variant="ghost" size="icon" onClick={toggleRepeat} className="control-btn">
-        <Repeat className={`h-4 w-4 ${isRepeat ? 'text-blue-500' : 'text-gray-500'}`} />
-      </Button>
-      <Button variant="ghost" size="icon" onClick={toggleShuffle} className="control-btn">
-        <Shuffle className={`h-4 w-4 ${isShuffled ? 'text-green-500' : 'text-gray-500'}`} />
-      </Button>
-    </div>
-  );
-};
-
-const HorizontalMusicPlayer = ({ currentTrack, onSkipBack, onSkipForward, onShuffle }) => {
+const HorizontalMusicPlayer = ({ 
+  currentTrack, 
+  onNext, 
+  onPrevious, 
+  isRepeat, 
+  isShuffle, 
+  onToggleRepeat, 
+  onToggleShuffle,
+  queue
+}) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(false); // State for checking if the music is loaded
+  const [isQueueVisible, setIsQueueVisible] = useState(false);
+
   const audioRef = useRef(null);
 
   useEffect(() => {
     if (currentTrack) {
       setIsPlaying(true);
       setCurrentTime(0);
-      setIsLoaded(false); // Reset isLoaded when a new track is selected
-      audioRef.current?.play();
+      if (audioRef.current) {
+        audioRef.current.play();
+      }
     }
   }, [currentTrack]);
 
@@ -131,17 +53,20 @@ const HorizontalMusicPlayer = ({ currentTrack, onSkipBack, onSkipForward, onShuf
   const handleTimeUpdate = () => {
     if (audioRef.current) {
       setCurrentTime(audioRef.current.currentTime);
+      setDuration(audioRef.current.duration);
     }
   };
 
-  const handleProgressChange = (newTime) => {
+  const handleProgressChange = (value) => {
+    const newTime = value[0];
     setCurrentTime(newTime);
     if (audioRef.current) {
       audioRef.current.currentTime = newTime;
     }
   };
 
-  const handleVolumeChange = (newVolume) => {
+  const handleVolumeChange = (value) => {
+    const newVolume = value[0];
     setVolume(newVolume);
     setIsMuted(newVolume === 0);
     if (audioRef.current) {
@@ -161,25 +86,24 @@ const HorizontalMusicPlayer = ({ currentTrack, onSkipBack, onSkipForward, onShuf
     }
   };
 
-  const handleCanPlay = async () => {
-    setIsLoaded(true); 
-    console.log("Herhkahdjh");
-    try {
-      const response = await axios.get("http://127.0.0.1:5000/songs/suggestions", {
-        params: { 
-          song_id: currentTrack.id, 
-        },
-      });
-      console.log(response.data);
-  
-      // if (onSearch) {
-      //   // onSearch(response.data);
-      // }
-    } catch (error) {
-      console.log("Error fetching data:", error);
+  const handleEnded = () => {
+    if (isRepeat) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play();
+    } else {
+      onNext();
     }
   };
-  
+
+  const formatTime = (time) => {
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  const toggleQueueVisibility = () => {
+    setIsQueueVisible(!isQueueVisible);
+  };
 
   if (!currentTrack) {
     return <div className="horizontal-music-player">No track selected</div>;
@@ -188,35 +112,82 @@ const HorizontalMusicPlayer = ({ currentTrack, onSkipBack, onSkipForward, onShuf
   return (
     <div className="horizontal-music-player">
       <div className="player-content">
-        <TrackInfo track={currentTrack} />
-        <PlaybackControls
-          isPlaying={isPlaying}
-          onTogglePlay={togglePlay}
-          onSkipBack={onSkipBack}
-          onSkipForward={onSkipForward}
-        />
-        <ProgressBar
-          currentTime={currentTime}
-          duration={currentTrack.duration}
-          onProgressChange={handleProgressChange}
-        />
-        <VolumeControl
-          volume={volume}
-          isMuted={isMuted}
-          onVolumeChange={handleVolumeChange}
-          onToggleMute={toggleMute}
-        />
-        <ExtraControls onShuffle={onShuffle} />
+        <img src={currentTrack.image[1].url} alt={`${currentTrack.title} cover`} className="cover-art" />
+        <div className="track-info">
+          <h2 className="track-title">{currentTrack.title}</h2>
+          <p className="track-artist">{currentTrack.artist}</p>
+        </div>
+        <div className="player-controls">
+          <div className="main-controls">
+            <Button variant="ghost" size="icon" className="control-btn" onClick={onPrevious}>
+              <SkipBack className="h-5 w-5" />
+            </Button>
+            <Button onClick={togglePlay} size="icon" className="control-btn play-pause">
+              {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6" />}
+            </Button>
+            <Button variant="ghost" size="icon" className="control-btn" onClick={onNext}>
+              <SkipForward className="h-5 w-5" />
+            </Button>
+          </div>
+          <div className="secondary-controls">
+            <Button variant="ghost" size="icon" className={`control-btn ${isRepeat ? 'active' : ''}`} onClick={onToggleRepeat}>
+              <Repeat className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" className={`control-btn ${isShuffle ? 'active' : ''}`} onClick={onToggleShuffle}>
+              <Shuffle className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" className={`control-btn ${isQueueVisible ? 'active' : ''}`} onClick={toggleQueueVisibility}>
+              <List className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+        <div className="progress-container">
+          <Slider
+            value={[currentTime]}
+            max={duration || 1}
+            step={1}
+            onValueChange={handleProgressChange}
+            className="progress-slider"
+          />
+          <div className="time-display">
+            <span>{formatTime(currentTime)}</span>
+            <span>{formatTime(duration)}</span>
+          </div>
+        </div>
+        <div className="volume-control">
+          <Button variant="ghost" size="icon" onClick={toggleMute} className="volume-btn">
+            {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+          </Button>
+          <Slider
+            value={[volume]}
+            max={1}
+            step={0.01}
+            className="volume-slider"
+            onValueChange={handleVolumeChange}
+          />
+        </div>
       </div>
+      {isQueueVisible && (
+        <div className="queue-display">
+          <h3>Queue</h3>
+          <ul>
+            {queue.map((track, index) => (
+              <li key={track.id} className={index === 0 ? 'current-track' : ''}>
+                {track.title} - {track.artist}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       <audio
         ref={audioRef}
         src={currentTrack.audio_url}
         onTimeUpdate={handleTimeUpdate}
-        onCanPlay={handleCanPlay} // Event to know when the music is ready
+        onEnded={handleEnded}
       />
-      {!isLoaded && <div>Loading...</div>} {/* Show a loading message until music is loaded */}
     </div>
   );
 };
 
 export default HorizontalMusicPlayer;
+

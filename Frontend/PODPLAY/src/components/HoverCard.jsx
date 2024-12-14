@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import PropTypes from "prop-types";
 import "./HoverCard.css";
 
@@ -12,11 +12,26 @@ const HoverCard = ({
   onClick,
 }) => {
   const [color, setColor] = useState("#ff0000");
+  const titleRef = useRef(null);
+  const artistRef = useRef(null);
+  const [titleOverflow, setTitleOverflow] = useState(false);
+  const [artistOverflow, setArtistOverflow] = useState(false);
 
   useEffect(() => {
     const randomColor = `hsl(${Math.floor(Math.random() * 360)}, 70%, 60%)`;
     setColor(randomColor);
-  }, []);
+
+    // Check if the title or artist overflows
+    const checkOverflow = (ref) => {
+      if (ref.current) {
+        return ref.current.scrollWidth > ref.current.clientWidth;
+      }
+      return false;
+    };
+
+    setTitleOverflow(checkOverflow(titleRef));
+    setArtistOverflow(checkOverflow(artistRef));
+  }, [title, artist]);
 
   const handleMouseMove = (e) => {
     const card = e.currentTarget;
@@ -43,12 +58,29 @@ const HoverCard = ({
     >
       <img
         src={image}
-        alt={`${title} cover`}
+        alt="Main logo"
         className="hover-card-image"
+        onError={(e) => {
+          e.target.onerror = null; // Prevents infinite loop if fallback also fails
+          e.target.src = "https://i.ibb.co/RpLLk4t/Pod-Play-Main.jpg"; // Fallback image
+        }}
       />
+
       <div className="hover-card-details">
-        <h3 className="hover-card-title">{title}</h3>
-        {artist && <p className="hover-card-artist">{artist}</p>}
+        <h3
+          ref={titleRef}
+          className={`hover-card-title ${titleOverflow ? "marquee" : ""}`}
+        >
+          {title}
+        </h3>
+        {artist && (
+          <p
+            ref={artistRef}
+            className={`hover-card-artist ${artistOverflow ? "marquee" : ""}`}
+          >
+            {artist}
+          </p>
+        )}
       </div>
     </div>
   );
@@ -65,4 +97,3 @@ HoverCard.propTypes = {
 };
 
 export default HoverCard;
-
