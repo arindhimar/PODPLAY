@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Sidebar from './components/Sidebar';
 import RecommendationsBar from './components/RecommendationsBar';
@@ -6,12 +6,9 @@ import AnimatedSearch from "./components/AnimatedSearch";
 import SearchResults from "./components/SearchResults";
 import HorizontalMusicPlayer from './components/HorizontalMusicPlayer';
 import ListenWithFriends from './components/ListenWithFriends';
-import { FaMusic } from 'react-icons/fa';
-import { Swiper, SwiperSlide } from 'swiper/react';
-import { Pagination, Navigation } from 'swiper/modules';
-import 'swiper/css';
-import 'swiper/css/pagination';
-import 'swiper/css/navigation';
+import { ref, onValue, set, serverTimestamp, off } from 'firebase/database';
+import { database } from './firebase';
+import useRoomSync from './hooks/useRoomSync';
 
 const HomePage = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -25,52 +22,110 @@ const HomePage = () => {
   const [suggestions, setSuggestions] = useState([]);
   const [isPlayingSuggestions, setIsPlayingSuggestions] = useState(false);
   const searchRef = useRef(null);
+  const [roomCode, setRoomCode] = useState(null);
+  const audioRef = useRef(null);
+  const [controls, setControls] = useState({
+    isPlaying: false,
+    currentTime: 0,
+    isRepeat: false,
+    isShuffle: false,
+    volume: 1
+  });
+  const [userCount, setUserCount] = useState(0);
 
-  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+  const { updateRoom, syncWithRoom } = useRoomSync(roomCode, audioRef);
 
-  const handleSearchResults = (fetchedCards) => {
+  const toggleSidebar = useCallback(() => setIsSidebarOpen(prev => !prev), []);
+
+  const handleSearchResults = useCallback((fetchedCards) => {
     setSearchResults(fetchedCards);
     setIsSearchOpen(true);
-  };
+  }, []);
 
-  const handleCardClick = async (card) => {
+  const fetchSuggestions = useCallback(async (card) => {
+    try {
+      const response = await fetch(`http://localhost:5000/songs/suggestions?song_id=${card.id}`);
+      const data = await response.json();
+      const filteredSuggestions = data.filter(suggestion => suggestion.id !== card.id);
+      setSuggestions(filteredSuggestions);
+      setQueue(prevQueue => [...prevQueue, ...filteredSuggestions]);
+      return filteredSuggestions;
+    } catch (error) {
+      console.error("Error fetching suggestions:", error.message);
+      return [];
+    }
+  }, []);
+
+  const handleCardClick = useCallback((card) => {
     if (currentTrack && currentTrack.id === card.id) return;
     console.log("Playing:", card);
     setCurrentTrack(card);
-    setPlayHistory([card, ...playHistory]);
-    setQueue([card, ...queue]);
-    await fetchSuggestions(card);
-  };
+    setPlayHistory(prev => [card, ...prev]);
+    setQueue(prev => [card, ...prev]);
+    fetchSuggestions(card).then(newSuggestions => {
+      updateRoom(card, true, 0);
+      if (newSuggestions.length > 0) {
+        setIsPlayingSuggestions(true);
+      }
+    });
+  }, [currentTrack, fetchSuggestions, updateRoom]);
 
-  const playNext = () => {
+  const playNext = useCallback(() => {
     if (queue.length > 1) {
       const [_, ...newQueue] = queue;
       setQueue(newQueue);
-      setCurrentTrack(newQueue[0]);
+      updateRoom(newQueue[0], true, 0);
     } else if (suggestions.length > 0) {
       const nextTrack = isShuffle ?
         suggestions[Math.floor(Math.random() * suggestions.length)] :
         suggestions[0];
       handleCardClick(nextTrack);
     }
-  };
+  }, [queue, suggestions, isShuffle, handleCardClick, updateRoom]);
 
-  const playPrevious = () => {
+  const playPrevious = useCallback(() => {
     if (playHistory.length > 1) {
       const [prevTrack, currentTrack, ...restHistory] = playHistory;
-      setCurrentTrack(prevTrack);
       setPlayHistory([prevTrack, currentTrack, ...restHistory]);
-      setQueue([prevTrack, currentTrack, ...queue.slice(1)]);
+      setQueue(prev => [prevTrack, currentTrack, ...prev.slice(1)]);
+      updateRoom(prevTrack, true, 0);
     }
-  };
+  }, [playHistory, updateRoom]);
 
-  const toggleRepeat = () => setIsRepeat(!isRepeat);
-  const toggleShuffle = () => {
-    setIsShuffle(!isShuffle);
-    if (!isShuffle) {
-      setQueue(([currentTrack, ...rest]) => [currentTrack, ...rest.sort(() => Math.random() - 0.5)]);
+  const toggleRepeat = useCallback(() => {
+    setControls(prev => {
+      const newIsRepeat = !prev.isRepeat;
+      updateRoom(null, null, null, { isRepeat: newIsRepeat });
+      return { ...prev, isRepeat: newIsRepeat };
+    });
+  }, [updateRoom]);
+
+  const toggleShuffle = useCallback(() => {
+    setControls(prev => {
+      const newIsShuffle = !prev.isShuffle;
+      if (newIsShuffle) {
+        setQueue(([currentTrack, ...rest]) => [currentTrack, ...rest.sort(() => Math.random() - 0.5)]);
+      }
+      updateRoom(null, null, null, { isShuffle: newIsShuffle });
+      return { ...prev, isShuffle: newIsShuffle };
+    });
+  }, [updateRoom]);
+
+  const handleSeek = useCallback(async (time) => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = time;
     }
-  };
+    setControls(prevControls => ({ ...prevControls, currentTime: time }));
+    updateRoom(null, null, time);
+  }, [updateRoom]);
+
+  const handlePlayPause = useCallback(() => {
+    setControls(prev => {
+      const newIsPlaying = !prev.isPlaying;
+      updateRoom(null, newIsPlaying);
+      return { ...prev, isPlaying: newIsPlaying };
+    });
+  }, [updateRoom]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -82,53 +137,16 @@ const HomePage = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const fetchSuggestions = async (card) => {
-    try {
-      const response = await fetch(`http://127.0.0.1:5000/songs/suggestions?song_id=${card.id}`);
-      const data = await response.json();
-      const filteredSuggestions = data.filter(suggestion => suggestion.id !== card.id);
-      setSuggestions(filteredSuggestions);
-      setQueue(prevQueue => [...prevQueue, ...filteredSuggestions]);
-
-      // Start playing suggestions one by one
-      setIsPlayingSuggestions(true);
-      playAllSuggestions(filteredSuggestions);
-
-    } catch (error) {
-      console.error("Error fetching suggestions:", error.message);
+  useEffect(() => {
+    if (roomCode) {
+      const unsubscribe = syncWithRoom((data) => {
+        if (data.currentTrack) setCurrentTrack(data.currentTrack);
+        if (data.controls) setControls(prevControls => ({ ...prevControls, ...data.controls }));
+        if (data.users) setUserCount(data.users);
+      });
+      return unsubscribe;
     }
-  };
-
-  const playAllSuggestions = (suggestionsList) => {
-    let currentIndex = 0;
-    const playNextSuggestion = () => {
-      if (currentIndex < suggestionsList.length) {
-        const nextTrack = suggestionsList[currentIndex];
-        handleCardClick(nextTrack); // Play this suggestion
-        currentIndex++;
-      } else {
-        // After all suggestions have been played, fetch new ones
-        setIsPlayingSuggestions(false);
-        fetchNewSuggestions();
-      }
-    };
-
-    // Set up a listener to call playNextSuggestion once a song ends
-    const audioElement = document.getElementById('audioPlayer');
-    if (audioElement) {
-      audioElement.onended = () => {
-        playNextSuggestion();
-      };
-    }
-  };
-
-  const fetchNewSuggestions = async () => {
-    // Fetch new suggestions after all previous ones have been played
-    const currentTrackId = currentTrack?.id;
-    if (currentTrackId) {
-      await fetchSuggestions({ id: currentTrackId });
-    }
-  };
+  }, [roomCode, syncWithRoom]);
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 text-white overflow-hidden">
@@ -165,20 +183,24 @@ const HomePage = () => {
             >
               <ListenWithFriends
                 currentTrack={currentTrack}
-                isPlaying={false}
+                isPlaying={controls.isPlaying}
                 onTrackChange={setCurrentTrack}
-                onPlayPause={(isPlaying) => console.log("Playback toggled:", isPlaying)}
-                onSeek={(time) => console.log("Seeked to:", time)}
+                onPlayPause={handlePlayPause}
+                onSeek={handleSeek}
+                roomCode={roomCode}
+                setRoomCode={setRoomCode}
+                audioRef={audioRef}
+                userCount={userCount}
               />
             </motion.div>
             <RecommendationsBar
-                suggestions={suggestions}
-                onTrackSelect={handleCardClick}
-                currentTrack={currentTrack}
-              />
+              suggestions={suggestions}
+              onTrackSelect={handleCardClick}
+              currentTrack={currentTrack}
+            />
 
             <motion.div
-              className=" bg-gray-800 bg-opacity-50 rounded-xl p-6 shadow-lg backdrop-filter backdrop-blur-lg mt-6"
+              className="bg-gray-800 bg-opacity-50 rounded-xl p-6 shadow-lg backdrop-filter backdrop-blur-lg mt-6"
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.6, duration: 0.5 }}
@@ -187,13 +209,16 @@ const HomePage = () => {
                 currentTrack={currentTrack}
                 onNext={playNext}
                 onPrevious={playPrevious}
-                isRepeat={isRepeat}
-                isShuffle={isShuffle}
+                isRepeat={controls.isRepeat}
+                isShuffle={controls.isShuffle}
                 onToggleRepeat={toggleRepeat}
                 onToggleShuffle={toggleShuffle}
                 queue={queue}
-                audio_url={currentTrack?.audio_url}
-                imageUrl={currentTrack?.image}
+                onPlayPause={handlePlayPause}
+                onSeek={handleSeek}
+                roomCode={roomCode}
+                controls={controls}
+                audioRef={audioRef}
               />
             </motion.div>
           </main>
@@ -204,3 +229,4 @@ const HomePage = () => {
 };
 
 export default HomePage;
+

@@ -27,22 +27,18 @@ const SearchResults = ({ results, onCardClick }) => {
   };
 
   const handleDownload = async (url, fileName) => {
-    const proxyUrl = "https://cors-anywhere.herokuapp.com/"; // CORS Anywhere proxy
-    const songUrl = proxyUrl + url; // Prepend the proxy URL to the song URL
+    const proxyUrl = "https://cors-anywhere.herokuapp.com/";
+    const songUrl = proxyUrl + url;
   
     try {
       const response = await axios.get(songUrl, {
-        responseType: "blob", // Ensures we get the file as a blob
+        responseType: "blob",
       });
   
-      console.log("Response Headers:", response.headers); // For debugging
-      console.log("Response Data:", response.data); // For debugging
-  
-      // Create a Blob from the response data and download it
       const blob = new Blob([response.data]);
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
-      link.download = fileName; // Set the file name for download
+      link.download = fileName;
       link.click();
     } catch (error) {
       console.error("Error downloading the file:", error);
@@ -50,12 +46,12 @@ const SearchResults = ({ results, onCardClick }) => {
   };
 
   const toggleMenu = (id, e) => {
-    e.stopPropagation(); // Stop event propagation to prevent triggering onCardClick
-    setMenuOpen(menuOpen === id ? null : id); // Toggle the menu open/close
+    e.stopPropagation();
+    setMenuOpen(menuOpen === id ? null : id);
   };
 
   const handleMouseLeave = () => {
-    setMenuOpen(null); // Close the menu when the mouse leaves
+    setMenuOpen(null);
   };
 
   return (
@@ -92,48 +88,63 @@ const SearchResults = ({ results, onCardClick }) => {
                     <p className="text-sm text-gray-300">{result.artist}</p>
                   </div>
 
-                  {/* Three-Dot Menu for actions */}
                   <div className="relative">
-                    <FaEllipsisV
-                      size={22}
-                      className="text-gray-300 hover:text-blue-400 cursor-pointer"
-                      onClick={(e) => toggleMenu(result.id, e)} // Pass event here to stop propagation
-                    />
+                    <motion.div
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                    >
+                      <FaEllipsisV
+                        size={22}
+                        className="text-gray-300 hover:text-blue-400 cursor-pointer"
+                        onClick={(e) => toggleMenu(result.id, e)}
+                      />
+                    </motion.div>
 
                     <AnimatePresence>
                       {menuOpen === result.id && (
                         <motion.div
-                          className="absolute right-0 top-0 bg-gray-800 rounded-lg mt-2 p-3 shadow-lg opacity-0 hover:opacity-100 transition-all duration-300"
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
-                          onMouseLeave={handleMouseLeave} // Close menu when mouse leaves
+                          className="absolute right-0 top-0 bg-gray-800 rounded-lg mt-2 p-3 shadow-lg"
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.95 }}
+                          transition={{ duration: 0.2 }}
+                          onMouseLeave={handleMouseLeave}
                         >
-                          <button className="flex items-center space-x-2 text-gray-300 hover:text-blue-400 transition-colors">
+                          <motion.button
+                            className="flex items-center space-x-2 text-gray-300 hover:text-blue-400 transition-colors w-full text-left mb-2"
+                            whileHover={{ x: 5 }}
+                          >
                             <FaPlus size={18} />
                             <span>Add to Playlist</span>
-                          </button>
-                          <button className="flex items-center space-x-2 text-gray-300 hover:text-blue-400 transition-colors">
+                          </motion.button>
+                          <motion.button
+                            className="flex items-center space-x-2 text-gray-300 hover:text-blue-400 transition-colors w-full text-left"
+                            whileHover={{ x: 5 }}
+                          >
                             <FaHeart size={18} />
                             <span>Like</span>
-                          </button>
+                          </motion.button>
                         </motion.div>
                       )}
                     </AnimatePresence>
                   </div>
 
-                  {/* Download Button */}
-                  <FaDownload
-                    size={20}
-                    className="text-gray-300 hover:text-blue-400 transition-colors cursor-pointer"
-                    onClick={(e) => {
-                      e.stopPropagation(); // Prevent triggering onCardClick
-                      handleDownload(
-                        result.audio_url, // Song URL
-                        `${result.title}.mp3` // File name with song title (in MP3 format)
-                      );
-                    }}
-                  />
+                  <motion.div
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                  >
+                    <FaDownload
+                      size={20}
+                      className="text-gray-300 hover:text-blue-400 transition-colors cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDownload(
+                          result.audio_url,
+                          `${result.title}.mp3`
+                        );
+                      }}
+                    />
+                  </motion.div>
                 </motion.li>
               ))
             ) : (
@@ -154,3 +165,4 @@ const SearchResults = ({ results, onCardClick }) => {
 };
 
 export default SearchResults;
+

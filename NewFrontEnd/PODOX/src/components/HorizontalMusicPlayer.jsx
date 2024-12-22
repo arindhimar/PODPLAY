@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { FaPlay, FaPause, FaStepBackward, FaStepForward, FaRedo, FaRandom } from 'react-icons/fa';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FaPlay, FaPause, FaStepBackward, FaStepForward, FaRedo, FaRandom, FaVolumeUp, FaVolumeMute, FaHeart, FaEllipsisH, FaDownload } from 'react-icons/fa';
+import { ref, set } from 'firebase/database';
+import { database, serverTimestamp } from '../firebase';
 
 const HorizontalMusicPlayer = ({
   currentTrack,
@@ -11,83 +13,173 @@ const HorizontalMusicPlayer = ({
   onToggleRepeat,
   onToggleShuffle,
   queue,
-  audio_url,
-  imageUrl
+  onPlayPause,
+  onSeek,
+  roomCode,
+  controls,
+  userCount
 }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const audioRef = useRef(null);
+  const [volume, setVolume] = useState(1);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const audioRef = useRef(new Audio());
 
-  // Automatically play new track when audio_url or currentTrack changes
   useEffect(() => {
-    if (audio_url && audioRef.current) {
-      audioRef.current.play(); // Auto play the new track
-      setIsPlaying(true); // Set the state to playing
-    }
-  }, [audio_url, currentTrack]);
-
-  // Update current time and total duration when the audio is playing
-  const updateProgress = () => {
-    if (audioRef.current) {
-      setCurrentTime(audioRef.current.currentTime);
-      setDuration(audioRef.current.duration);
-    }
-  };
-
-  // Set up event listener for time updates
-  useEffect(() => {
-    const audioElement = audioRef.current;
-    if (audioElement) {
-      audioElement.addEventListener('timeupdate', updateProgress);
-    }
-
-    // Clean up the event listener
-    return () => {
-      if (audioElement) {
-        audioElement.removeEventListener('timeupdate', updateProgress);
+    if (currentTrack?.audio_url) {
+      audioRef.current.src = currentTrack.audio_url;
+      audioRef.current.load();
+      if (isPlaying) {
+        audioRef.current.play().catch(error => console.error("Playback failed", error));
       }
+    }
+  }, [currentTrack]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    audio.addEventListener('timeupdate', updateProgress);
+    audio.addEventListener('loadedmetadata', () => setDuration(audio.duration));
+    audio.addEventListener('ended', handleTrackEnd);
+
+    return () => {
+      audio.removeEventListener('timeupdate', updateProgress);
+      audio.removeEventListener('loadedmetadata', () => setDuration(audio.duration));
+      audio.removeEventListener('ended', handleTrackEnd);
     };
   }, []);
 
-  // Toggle play/pause functionality
-  const togglePlayPause = () => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause();
-      } else {
-        audioRef.current.play();
-      }
-      setIsPlaying(!isPlaying);
+  const updateProgress = () => {
+    setCurrentTime(audioRef.current.currentTime);
+  };
+
+  const handleTrackEnd = () => {
+    if (isRepeat) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play();
+    } else {
+      onNext();
     }
   };
 
-  // Seek to a specific time in the audio when clicking the progress bar
+  const togglePlayPause = () => {
+    const newIsPlaying = !isPlaying;
+    setIsPlaying(newIsPlaying);
+    if (newIsPlaying) {
+      audioRef.current.play().catch(error => console.error("Playback failed", error));
+    } else {
+      audioRef.current.pause();
+    }
+    onPlayPause(newIsPlaying);
+
+    if (roomCode) {
+      const roomRef = ref(database, `rooms/${roomCode}`);
+      set(roomRef, {
+        currentTrack,
+        controls: {
+          ...controls,
+          isPlaying: newIsPlaying,
+          currentTime: audioRef.current.currentTime,
+          lastUpdated: serverTimestamp()
+        },
+        users: userCount
+      });
+    }
+  };
+
   const handleSeek = (e) => {
     const progressBar = e.target;
     const clickPosition = e.clientX - progressBar.getBoundingClientRect().left;
     const progressBarWidth = progressBar.offsetWidth;
     const newTime = (clickPosition / progressBarWidth) * duration;
-    if (audioRef.current) {
-      audioRef.current.currentTime = newTime;
-      setCurrentTime(newTime);
+    audioRef.current.currentTime = newTime;
+    setCurrentTime(newTime);
+    onSeek(newTime);
+    
+    if (roomCode) {
+      const roomRef = ref(database, `rooms/${roomCode}`);
+      set(roomRef, {
+        currentTrack,
+        controls: {
+          ...controls,
+          currentTime: newTime,
+          lastUpdated: serverTimestamp()
+        },
+        users: userCount
+      });
     }
   };
 
-  // Function to get the best image URL
+  const handleVolumeChange = (e) => {
+    const newVolume = parseFloat(e.target.value);
+    setVolume(newVolume);
+    audioRef.current.volume = newVolume;
+    setIsMuted(newVolume === 0);
+
+    if (roomCode) {
+      const roomRef = ref(database, `rooms/${roomCode}/controls`);
+      set(roomRef, { ...controls, volume: newVolume });
+    }
+  };
+
+  const toggleMute = () => {
+    const newIsMuted = !isMuted;
+    setIsMuted(newIsMuted);
+    audioRef.current.volume = newIsMuted ? 0 : volume;
+
+    if (roomCode) {
+      const roomRef = ref(database, `rooms/${roomCode}/controls`);
+      set(roomRef, { ...controls, volume: newIsMuted ? 0 : volume });
+    }
+  };
+
+  const toggleLike = () => {
+    setIsLiked(!isLiked);
+  };
+
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+
+  const handleDownload = () => {
+    // Implement download functionality here
+    console.log('Downloading track...');
+  };
+
   const getBestImage = (images) => {
-    if (!imageUrl || imageUrl.length === 0) {
+    if (!currentTrack?.image || currentTrack.image.length === 0) {
       return 'https://via.placeholder.com/48'; 
     }
 
-    for (let i = imageUrl.length - 1; i >= 0; i--) {
-      if (imageUrl[i]?.url) {
-        return imageUrl[i].url; 
+    for (let i = currentTrack.image.length - 1; i >= 0; i--) {
+      if (currentTrack.image[i]?.url) {
+        return currentTrack.image[i].url; 
       }
     }
 
     return 'https://via.placeholder.com/48'; 
   };
+
+  useEffect(() => {
+    if (controls) {
+      setIsPlaying(controls.isPlaying);
+      setCurrentTime(controls.currentTime);
+      setVolume(controls.volume);
+      setIsMuted(controls.volume === 0);
+      
+      if (audioRef.current) {
+        audioRef.current.currentTime = controls.currentTime;
+        audioRef.current.volume = controls.volume;
+        if (controls.isPlaying) {
+          audioRef.current.play().catch(error => console.error("Playback failed", error));
+        } else {
+          audioRef.current.pause();
+        }
+      }
+    }
+  }, [controls]);
 
   return (
     <motion.div
@@ -97,7 +189,6 @@ const HorizontalMusicPlayer = ({
       transition={{ duration: 0.5 }}
     >
       <div className="flex flex-col md:flex-row items-center justify-between mb-4">
-        {/* Track Image */}
         <motion.div
           className="w-16 h-16 md:w-18 md:h-18 lg:w-24 lg:h-24 bg-gray-700 rounded-full overflow-hidden"
           initial={{ opacity: 0, x: -20 }}
@@ -105,7 +196,7 @@ const HorizontalMusicPlayer = ({
           transition={{ delay: 0.2, duration: 0.5 }}
         >
           <img
-            src={getBestImage(currentTrack?.imageUrl)}
+            src={getBestImage(currentTrack?.image)}
             alt="Track Image"
             className="object-cover w-full h-full"
           />
@@ -165,20 +256,12 @@ const HorizontalMusicPlayer = ({
         </div>
       </div>
 
-      {/* Audio Player */}
-      {audio_url && (
-        <audio ref={audioRef}  src={audio_url} loop={isRepeat}>
-          Your browser does not support the audio element.
-        </audio>
-      )}
-
-      {/* Progress Bar */}
       <motion.div
         className="bg-gray-700 h-2 rounded-full overflow-hidden cursor-pointer"
         initial={{ scaleX: 0 }}
         animate={{ scaleX: 1 }}
         transition={{ delay: 0.5, duration: 0.5 }}
-        onClick={handleSeek} // Handle click to seek to a new position
+        onClick={handleSeek}
       >
         <motion.div
           className="bg-blue-500 h-2 rounded-full"
@@ -186,21 +269,83 @@ const HorizontalMusicPlayer = ({
         />
       </motion.div>
 
-      {/* Current Time and Total Duration */}
       <div className="flex justify-between text-gray-300 text-sm mt-2">
         <span>{formatTime(currentTime)}</span>
         <span>{formatTime(duration)}</span>
+      </div>
+
+      <div className="flex items-center justify-between mt-4">
+        <div className="flex items-center space-x-4">
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={toggleMute}
+            className="text-white hover:text-blue-400 transition-colors"
+          >
+            {isMuted ? <FaVolumeMute size={20} /> : <FaVolumeUp size={20} />}
+          </motion.button>
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            value={isMuted ? 0 : volume}
+            onChange={handleVolumeChange}
+            className="w-24 accent-blue-500"
+          />
+        </div>
+
+        <div className="flex items-center space-x-4">
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={toggleLike}
+            className={`text-white hover:text-red-500 transition-colors ${isLiked ? 'text-red-500' : ''}`}
+          >
+            <FaHeart size={20} />
+          </motion.button>
+          <motion.div className="relative">
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={toggleMenu}
+              className="text-white hover:text-blue-400 transition-colors"
+            >
+              <FaEllipsisH size={20} />
+            </motion.button>
+            <AnimatePresence>
+              {isMenuOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg z-10"
+                >
+                  <motion.button
+                    whileHover={{ backgroundColor: 'rgba(59, 130, 246, 0.1)' }}
+                    className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-blue-500 hover:text-white"
+                    onClick={handleDownload}
+                  >
+                    <FaDownload className="inline mr-2" /> Download
+                  </motion.button>
+                  {/* Add more menu items here */}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        </div>
       </div>
     </motion.div>
   );
 };
 
-// Helper function to format time as minutes:seconds
 const formatTime = (time) => {
-  if (isNaN(time)) return '00:00'; // Handle NaN (initial state)
+  if (isNaN(time)) return '00:00';
   const minutes = Math.floor(time / 60);
   const seconds = Math.floor(time % 60);
   return `${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
 };
 
 export default HorizontalMusicPlayer;
+

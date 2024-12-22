@@ -36,7 +36,7 @@ def search_songs():
                     "id": item.get("id"),
                     "title": item.get("name"),
                     "album": item.get("album", {}).get("name", "Unknown Album"),
-                    "image": item.get("image"       ),
+                    "image": item.get("image"),
                     "url": item.get("url"),
                     "artist": ", ".join([artist['name'] for artist in item.get('artists', {}).get('primary', [])]),
                     "audio_url": item.get("downloadUrl", [{}])[-1].get("url", ""),
@@ -127,7 +127,6 @@ def get_song_lyrics(song_id):
 def get_song_suggestions():
     song_id = request.args.get('song_id')
     limit = request.args.get('limit', 10)
-    print("fucking gooooo")
     if not song_id:
         return jsonify({"error": "song_id parameter is required"}), 400
 
